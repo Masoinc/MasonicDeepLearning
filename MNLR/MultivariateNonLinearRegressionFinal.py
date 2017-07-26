@@ -200,8 +200,15 @@ if __name__ == '__main__':
     # train_nn(xtr, ytr)
 
     # 生成测试数据集拟合图
-    prediction_plot(ytr, prediction(xtr))
-
+    # prediction_plot(ytr, prediction(xtr))
+    SSE = 0
+    yte = prediction(xtr)
+    # print(ytr,yte)
+    for i in range(len(ytr)):
+        SSE += pow(ytr[i]-yte[i], 2)
+    MSE = SSE/len(ytr)
+    print("MSE=",MSE)
+    # ytr, prediction(xtr)
     # 输出预测结果
     # print(prediction(xte))
     # print(prediction_non(xte))
