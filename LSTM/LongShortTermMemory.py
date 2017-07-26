@@ -32,7 +32,7 @@ with tf.name_scope('LSTM_Hyper_Parameter'):
         tf.train.exponential_decay(learning_rate=0.001, global_step=global_step, decay_steps=100, decay_rate=0.9,
                                    staircase=True)
     tf.summary.scalar('learning_rate', learning_rate)
-    regularizer_enabled = True
+    regularizer_enabled = False
     w_regularizer_rate = 0.05
     tf.summary.scalar('w1_regularizer_rate', w_regularizer_rate)
     hidden_layer_size = 15
@@ -89,12 +89,12 @@ def train_rnn():
     # 损失函数(MSE)
     with tf.name_scope('LSTM_Accuracy'):
         if regularizer_enabled:
-            loss = tf.reduce_mean(tf.square(y_ - Y))
-            tf.summary.scalar('loss', loss)
-        else:
             loss = tf.reduce_mean(tf.square(Y - y_)) + \
                    tf.contrib.layers.l2_regularizer(w_regularizer_rate)(w1) + \
                    tf.contrib.layers.l2_regularizer(w_regularizer_rate)(w2)
+            tf.summary.scalar('loss', loss)
+        else:
+            loss = tf.reduce_mean(tf.square(y_ - Y))
             tf.summary.scalar('loss', loss)
 
     # 反向传播算法
@@ -133,9 +133,9 @@ def prediction(data):
             predict.append(next_seq[-1])
             prev_seq = np.vstack((prev_seq[1:], next_seq[-1]))
 
-        print(predict)
         real = data_full_normalized[-3:]
-
+        print("真实值", real)
+        print("预测值", predict)
         MSE = getsumse(predict, real) / 3
         RMSE = pow(MSE, 0.5)
         # 拟合优度
@@ -167,7 +167,12 @@ def prediction_non(data_n):
         for num in predict:
             predict_unnormalized.append(num * np.max(data_full))
         print(predict_unnormalized)
-        real = data_full_normalized[-3:]
+        real = data_full[-3:]
+        print(real)
+        MSE = getsumse(predict_unnormalized, real) / 3
+        RMSE = pow(MSE, 0.5)
+        # 拟合优度
+        print("MSE = ", MSE, "RMSE = ", RMSE)
         # MSE = getsumse(predict, real) / 3
         # RMSE = pow(MSE, 0.5)
         # 拟合优度
@@ -180,6 +185,5 @@ def prediction_non(data_n):
 
 
 if __name__ == '__main__':
-    # train_rnn()
     # prediction(x_train)
     prediction_non(x_train)
