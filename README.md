@@ -10,8 +10,8 @@
   - 数据集位于DataSet\Renmindemingyi.xlsx
 
 
-- MNLR-多元非线性回归模型
+- CNN-卷积神经网络模型
   - 用于预测电视剧热度
-  - 主程序文件位于MNLR\MultivariateNonLinearRegressionFinal.py
-  - 数据集位于DataSet\HeatPrediction.xlsx
+  - 主程序文件位于CNN\CNN.py
+  - 数据集位于DataSet\HeatPredictionv2.xlsx
 
