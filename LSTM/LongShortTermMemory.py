@@ -15,7 +15,6 @@ from Utility.Normalize import mnormalize, unmnormalize
 from Utility.XlsReader import readxlsbycol
 
 Rootdir = os.path.abspath(os.path.dirname(os.getcwd()))
-# Modeldir = Rootdir + r"\Models\LSTM_Best\LSTM_Best2.model"
 Modeldir = Rootdir + r"\Models\LSTM\LSTM.model"
 Datadir = Rootdir + "\DataSet\Renmindemingyi.xlsx"
 TensorBoarddir = Rootdir + r"\TensorBoard\LSTM"
