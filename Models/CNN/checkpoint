@@ -1,0 +1,2 @@
+model_checkpoint_path: "E:\\PyCharmProjects\\MasonicDeepLearning\\Models\\CNN\\CNN.ckpt"
+all_model_checkpoint_paths: "E:\\PyCharmProjects\\MasonicDeepLearning\\Models\\CNN\\CNN.ckpt"
