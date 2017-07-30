@@ -185,5 +185,5 @@ def prediction_non(data_n):
 
 
 if __name__ == '__main__':
-    # prediction(x_train)
-    prediction_non(x_train)
+    prediction(x_train)
+    # prediction_non(x_train)
