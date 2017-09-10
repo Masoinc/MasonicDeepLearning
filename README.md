@@ -1,5 +1,5 @@
 # MasonicDeepLearning
-### 登峰杯决赛-数据挖掘-深度学习
+### Data Mining - Deep Learning
 ### 17.7.25 By Masonic
 - 基于 TensorFlow 编写的深度学习模型
 
