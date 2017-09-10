@@ -55,6 +55,7 @@ with tf.variable_scope("CNN_Conv_Layer_Data", reuse=None):
     xsina_full = []
     for i in range(1, 20):
         xsina = readxlsbycol(Datadir, "Sheet2", i)[1:22]
+        # 19部电视剧x21天
         xsina = mnormalize(xsina)
         xsina_full.append(xsina)
     xsina_full = np.array(xsina_full).T
@@ -62,6 +63,7 @@ with tf.variable_scope("CNN_Conv_Layer_Data", reuse=None):
     xqiyi_full = []
     for i in range(1, 20):
         xqiyi = readxlsbycol(Datadir, "Sheet3", i)[1:22]
+        # 19部电视剧x21天
         xqiyi = mnormalize(xqiyi)
         xqiyi_full.append(xqiyi)
     xqiyi_full = np.array(xqiyi_full).T
@@ -172,7 +174,12 @@ def train_nn(x_train, y_train):
         with tf.name_scope('CNN_Convolution_Layer'):
 
             x_sina_unstack = tf.unstack(xsina_full, axis=1)
-
+            # 19部电视剧x21天
+            # 21 -> 14 (8)卷积
+            # 14 -> 12 (3)池化
+            # 12 -> 7 (6)卷积
+            # 7 -> 5 (3)池化
+            # 5 -> 3 (3)池化
             w1_sina = tf.get_variable('w1_sina', [8, 1, 1, xsina_full.shape[1]],
                                       initializer=tf.truncated_normal_initializer(stddev=0.1))
             w1_sina_unstack = tf.unstack(w1_sina, axis=3)
@@ -207,10 +214,12 @@ def train_nn(x_train, y_train):
 
             convI_sina = tf.nn.conv1d(tf.cast(xconv, tf.float32), w1_sina_unstack[i], stride=1, padding="VALID",
                                       data_format="NHWC")
+            # 卷积-8
             convI_sina = tf.nn.bias_add(convI_sina, b1_sina)
             convI_sina_actived = tf.nn.relu(convI_sina)
             convI_sina_actived = tf.expand_dims(convI_sina_actived, 2)
             poolI = tf.nn.max_pool(convI_sina_actived, ksize=[1, 3, 1, 1], strides=[1, 1, 1, 1], padding="VALID")
+            # 池化-3
             convsI_sina.append(poolI)
 
         convsII_sina = []
