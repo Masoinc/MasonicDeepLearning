@@ -1,5 +1,5 @@
 # MasonicDeepLearning
-### Data Mining - Deep Learning
+### Data Mining - Deep Learning Based On TensorFlow
 ### 17.7.25 By Masonic
 - 基于 TensorFlow 编写的深度学习模型
 
