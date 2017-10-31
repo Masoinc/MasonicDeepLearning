@@ -14,31 +14,37 @@ from Utility.ModelAccuracy import getrsqured, getsumse
 from Utility.Normalize import mnormalize, unmnormalize
 from Utility.XlsReader import readxlsbycol
 
+from LSTM.lstm_tfcoder import TFR2dreaderv
 Rootdir = os.path.abspath(os.path.dirname(os.getcwd()))
 Modeldir = Rootdir + r"\Models\LSTM\LSTM.model"
 Datadir = Rootdir + "\DataSet\Renmindemingyi.xlsx"
 TensorBoarddir = Rootdir + r"\TensorBoard\LSTM"
+TFRdir = Rootdir + "\DataSet\TFRecords"
 Data_Sheet = "Sheet1"
 
 # 训练参数设定
 with tf.name_scope('LSTM_Hyper_Parameter'):
+    train_step = 3000
+    tf.summary.scalar('train_step', train_step)
     # learning_rate = 0.0001
     # 设定衰减学习率以加速学习
-    train_step = 5000
-    tf.summary.scalar('train_step', train_step)
-    global_step = tf.Variable(0, name="global_step")
+
+    global_step = tf.Variable(0, name="global_step", trainable=False)
     learning_rate = \
         tf.train.exponential_decay(learning_rate=0.001, global_step=global_step, decay_steps=100, decay_rate=0.9,
                                    staircase=True)
     tf.summary.scalar('learning_rate', learning_rate)
+
     regularizer_enabled = False
     w_regularizer_rate = 0.05
-    tf.summary.scalar('w1_regularizer_rate', w_regularizer_rate)
+    tf.summary.scalar('w_regularizer_rate', w_regularizer_rate)
+
     hidden_layer_size = 15
     tf.summary.scalar('hidden_layer_size', hidden_layer_size)
-    # 序列参考量
+
     seq_size = 10
     tf.summary.scalar('seq_size', seq_size)
+    # 使用预测前10日数据
 
 
 # 循环神经网络
@@ -81,8 +87,9 @@ with tf.name_scope('LSTM_Data'):
     X = tf.placeholder(tf.float32, [None, seq_size, 1])
     Y = tf.placeholder(tf.float32, [None, seq_size])
 
-
 # 训练模型
+
+
 def train_rnn():
     y_, w1, w2 = rnn()
 
@@ -100,28 +107,31 @@ def train_rnn():
     # 反向传播算法
     train_op = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
 
-    saver = tf.train.Saver(tf.global_variables())
+    saver = tf.train.Saver()
 
     merged = tf.summary.merge_all()
+
     with tf.Session() as sess:
 
         sess.run(tf.global_variables_initializer())
         train_writer = tf.summary.FileWriter(TensorBoarddir, sess.graph)
 
-        for step in range(train_step):
-            summary, _, loss_ = sess.run([merged, train_op, loss], feed_dict={X: x_train, Y: y_train})
+        for step in range(train_step + 1):
+            summary, _, loss_ = sess.run([merged, train_op, loss], feed_dict={X: TFR2dreaderv('trX'), Y: y_train})
             if step % 100 == 0:
                 train_writer.add_summary(summary, step)
                 print(step, loss_)
-        print("模型已另存至 ", saver.save(sess, Modeldir))
-        print("可视化数据已另存至 ", TensorBoarddir)
+            if step % 1000 == 0 and step >= 1000:
+                saver.save(sess, Modeldir, global_step=global_step)
+                print("模型已另存至 ", saver.save(sess, Modeldir))
+                print("可视化数据已另存至 ", TensorBoarddir)
 
 
 # 预测
 def prediction(data):
     y_, _, _ = rnn()
 
-    saver = tf.train.Saver(tf.global_variables())
+    saver = tf.train.Saver()
 
     with tf.Session() as sess:
         saver.restore(sess, Modeldir)
@@ -185,5 +195,7 @@ def prediction_non(data_n):
 
 
 if __name__ == '__main__':
-    prediction(x_train)
+    train_rnn()
+
+    # prediction(x_train)
     # prediction_non(x_train)

@@ -1,0 +1,3 @@
+model_checkpoint_path: "E:\\PyCharmProjects\\MasonicDeepLearning_YauAward\\Models\\LSTM\\LSTM.model"
+all_model_checkpoint_paths: "E:\\PyCharmProjects\\MasonicDeepLearning_YauAward\\Models\\LSTM\\LSTM.model-0"
+all_model_checkpoint_paths: "E:\\PyCharmProjects\\MasonicDeepLearning_YauAward\\Models\\LSTM\\LSTM.model"

@@ -10,6 +10,6 @@ def mnormalize(data):
 def znormalize(data):
     return (data - np.mean(data)) / np.std(data)
 
-
+# 反标准化
 def unmnormalize(data, srcdata):
     return data * np.max(srcdata)
