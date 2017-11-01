@@ -11,7 +11,7 @@ from Utility.XlsReader import readxlsbycol
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 Rootdir = os.path.abspath(os.path.dirname(os.path.dirname(os.getcwd())))
-Modeldir = Rootdir + r"\Models\CNNv2-V\CNNv2.model"
+Modeldir = Rootdir + r"\Models\CNNv2-VI\CNNv2.model"
 Datadir = Rootdir + r"\DataSet\HeatPredictionv2.xlsx"
 TensorBoarddir = Rootdir + r"\TensorBoard\CNN"
 
@@ -134,15 +134,11 @@ with tf.name_scope('CNN_Training_Parameter'):
         # convolutional weights
         W_c = {
             # sina
-            's_c': tf.get_variable('w1_sina', [5, 1, 1, 19]),
-            's_c1b': tf.get_variable('b1_sina', [1]),
-            's_c2b': tf.get_variable('b2_sina', [1]),
-            's_c3b': tf.get_variable('b3_sina', [1]),
+            's_c': tf.get_variable('w_sina', [5, 1, 1, 19]),
+            's_cb': tf.get_variable('b_sina', [1]),
             # qiyi
-            'q_c': tf.get_variable('w1_qiyi', [5, 1, 1, 19]),
-            'q_c1b': tf.get_variable('b1_qiyi', [1]),
-            'q_c2b': tf.get_variable('b2_qiyi', [1]),
-            'q_c3b': tf.get_variable('b3_qiyi', [1])
+            'q_c': tf.get_variable('w_qiyi', [5, 1, 1, 19]),
+            'q_cb': tf.get_variable('b_qiyi', [1])
         }
 
 
@@ -184,7 +180,7 @@ def cnn(X, SinaX, QiyiX, W_fc, W_c):
         # 结果(1, 21, 1, 1)->(1, 17, 1, 1)
         #
         # 卷积-8
-        cI = tf.nn.bias_add(cI, W_c['s_c1b'])
+        cI = tf.nn.bias_add(cI, W_c['s_cb'])
         cI = tf.nn.relu(cI)
         cI = tf.expand_dims(cI, 2)
         pI = tf.nn.max_pool(cI, ksize=[1, 3, 1, 1], strides=[1, 1, 1, 1], padding="VALID")
@@ -194,13 +190,13 @@ def cnn(X, SinaX, QiyiX, W_fc, W_c):
         cII = tf.squeeze(pI, axis=-1)
         cII = tf.nn.conv1d(cII, s_u[i], stride=1, padding="VALID", data_format="NHWC")
         # (1, 15, 1, 1) -> (1, 11, 1, 1)
-        cII = tf.nn.bias_add(cII, W_c['s_c2b'])
+        cII = tf.nn.bias_add(cII, W_c['s_cb'])
         cII = tf.nn.relu(cII)
         cII = tf.expand_dims(cII, 2)
         pII = tf.nn.max_pool(cII, ksize=[1, 5, 1, 1], strides=[1, 1, 1, 1], padding="VALID")
         cIII = tf.squeeze(pII, axis=-1)
         cIII = tf.nn.conv1d(cIII, s_u[i], stride=1, padding="VALID", data_format="NHWC")
-        cIII = tf.nn.bias_add(cIII, W_c['s_c3b'])
+        cIII = tf.nn.bias_add(cIII, W_c['s_cb'])
         cIII = tf.nn.relu(cIII)
         out_sina.append(cIII)
     Sina_out = tf.cast(tf.squeeze(out_sina), tf.float64)
@@ -212,20 +208,20 @@ def cnn(X, SinaX, QiyiX, W_fc, W_c):
 
         cI = tf.nn.conv1d(tf.cast(Sina_perX, tf.float32), q_u[i], stride=1, padding="VALID",
                           data_format="NHWC")
-        cI = tf.nn.bias_add(cI, W_c['q_c1b'])
+        cI = tf.nn.bias_add(cI, W_c['q_cb'])
         cI = tf.nn.relu(cI)
         cI = tf.expand_dims(cI, 2)
         pI = tf.nn.max_pool(cI, ksize=[1, 3, 1, 1], strides=[1, 1, 1, 1], padding="VALID")
 
         cII = tf.squeeze(pI, axis=-1)
         cII = tf.nn.conv1d(cII, q_u[i], stride=1, padding="VALID", data_format="NHWC")
-        cII = tf.nn.bias_add(cII, W_c['q_c2b'])
+        cII = tf.nn.bias_add(cII, W_c['q_cb'])
         cII = tf.nn.relu(cII)
         cII = tf.expand_dims(cII, 2)
         pII = tf.nn.max_pool(cII, ksize=[1, 5, 1, 1], strides=[1, 1, 1, 1], padding="VALID")
         cIII = tf.squeeze(pII, axis=-1)
         cIII = tf.nn.conv1d(cIII, q_u[i], stride=1, padding="VALID", data_format="NHWC")
-        cIII = tf.nn.bias_add(cIII, W_c['q_c3b'])
+        cIII = tf.nn.bias_add(cIII, W_c['q_cb'])
         cIII = tf.nn.relu(cIII)
         out_qiyi.append(cIII)
     Qiyi_out = tf.cast(tf.squeeze(out_qiyi), tf.float64)
