@@ -314,18 +314,18 @@ def prediction_plot(ytr, ypre):
 if __name__ == '__main__':
     xtr, xte, ytr = get_data()
     # 训练神经网络
-    # train_nn(xtr, ytr)
+    train_nn(xtr, ytr)
 
     # 读取卷积层参数，获取完整数据集
-    conv_sina = np.load("convs_sina.npy")
-    conv_qiyi = np.load("convs_qiyi.npy")
-    xtr = np.concatenate((xtr, conv_sina[0:16]), axis=1)
-    xtr = np.concatenate((xtr, conv_qiyi[0:16]), axis=1)
-    xte = np.concatenate((xte, conv_sina[16:19]), axis=1)
-    xte = np.concatenate((xte, conv_qiyi[16:19]), axis=1)
+    # conv_sina = np.load("convs_sina.npy")
+    # conv_qiyi = np.load("convs_qiyi.npy")
+    # xtr = np.concatenate((xtr, conv_sina[0:16]), axis=1)
+    # xtr = np.concatenate((xtr, conv_qiyi[0:16]), axis=1)
+    # xte = np.concatenate((xte, conv_sina[16:19]), axis=1)
+    # xte = np.concatenate((xte, conv_qiyi[16:19]), axis=1)
 
     # 生成测试数据集拟合图
-    prediction_plot(ytr, prediction(xtr))
+    # prediction_plot(ytr, prediction(xtr))
 
     # 输出预测结果
     # print(prediction(xte))

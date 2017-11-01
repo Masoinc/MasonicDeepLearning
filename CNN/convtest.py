@@ -9,7 +9,7 @@ from Utility.XlsReader import readxlsbycol
 
 Rootdir = os.path.abspath(os.path.dirname(os.getcwd()))
 Modeldir = Rootdir + r"\Models\CNN\CNN.ckpt"
-# Modeldir = Rootdir + r"\Models\CNN_Best\CNN.ckpt"
+# Modeldir = Rootdir + r"\Models\CNN_Best\CNN_backup.ckpt"
 Datadir = Rootdir + r"\DataSet\HeatPredictionv2.xlsx"
 TensorBoarddir = Rootdir + r"\TensorBoard\CNN"
 
