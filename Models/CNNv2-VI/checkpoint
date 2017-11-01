@@ -1,0 +1,2 @@
+model_checkpoint_path: "E:\\PyCharmProjects\\MasonicDeepLearning\\Models\\CNNv2-VI\\CNNv2.model"
+all_model_checkpoint_paths: "E:\\PyCharmProjects\\MasonicDeepLearning\\Models\\CNNv2-VI\\CNNv2.model"
