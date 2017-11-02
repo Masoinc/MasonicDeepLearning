@@ -16,7 +16,7 @@ from Utility.XlsReader import readxlsbycol
 
 Rootdir = os.path.abspath(os.path.dirname(os.path.dirname(os.getcwd())))
 # Modeldir = Rootdir + r"\Models\LSTM\LSTM-I"
-Modeldir = r"E:\PyCharmProjects\MasonicDeepLearning_YauAward\Models\LSTM\LSTM-I\LSTM-I.model"
+Modeldir = Rootdir + "\Models\LSTM\LSTM-I\LSTM-I.model"
 Datadir = Rootdir + "\DataSet\Renmindemingyi.xlsx"
 TensorBoarddir = Rootdir + r"\TensorBoard\LSTM\LSTM-I"
 Data_Sheet = "Sheet1"
@@ -197,6 +197,6 @@ def prediction_non(data_n):
 
 
 if __name__ == '__main__':
-    train_rnn()
-    # prediction(x_train)
+    # train_rnn()
+    prediction(x_train)
     # prediction_non(x_train)

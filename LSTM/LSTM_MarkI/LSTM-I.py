@@ -16,29 +16,26 @@ from Utility.XlsReader import readxlsbycol
 
 Rootdir = os.path.abspath(os.path.dirname(os.path.dirname(os.getcwd())))
 # Modeldir = Rootdir + r"\Models\LSTM\LSTM-I"
-Modeldir = Rootdir + "\Models\LSTM\LSTM-VI\LSTM-VI.model"
-Datadir = Rootdir + "\DataSet\Renmindemingyi.xlsx"
-TensorBoarddir = Rootdir + r"\TensorBoard\LSTM\LSTM-VI"
-Data_Sheet = "Sheet1"
+Modeldir = r"E:\PyCharmProjects\MasonicDeepLearning\Models\LSTM_MarkI\LSTM-MarkI.model"
+Datadir = Rootdir + "\DataSet\LSTM_MarkI\白鹿原.xlsx"
+TensorBoarddir = Rootdir + r"\TensorBoard\LSTM\LSTM_MarkI"
+Data_Sheet = "白鹿原"
 
 # 训练参数设定
 with tf.name_scope('LSTM_Hyper_Parameter'):
     # learning_rate = 0.0001
     # 设定衰减学习率以加速学习
-    train_step = 6000
+    train_step = 10000
     tf.summary.scalar('train_step', train_step)
-    early_stopping_rate = 0
-
     global_step = tf.Variable(0, name="global_step")
     learning_rate = \
-        tf.train.exponential_decay(learning_rate=0.001, global_step=global_step, decay_steps=100, decay_rate=0.9,
+        tf.train.exponential_decay(learning_rate=0.01, global_step=global_step, decay_steps=100, decay_rate=0.9,
                                    staircase=True)
     tf.summary.scalar('learning_rate', learning_rate)
-    regularizer_enabled = False
-    w_regularizer_rate = 0.01
+    regularizer_enabled = True
+    w_regularizer_rate = 0.5
     tf.summary.scalar('w1_regularizer_rate', w_regularizer_rate)
-    hidden_layer_size = 15
-    hidden_layer2_size = 8
+    hidden_layer_size = 30
     tf.summary.scalar('hidden_layer_size', hidden_layer_size)
     # 序列参考量
     seq_size = 10
@@ -52,39 +49,36 @@ def rnn():
             w1 = tf.Variable(tf.random_normal([hidden_layer_size, 1]), name='W')
             tf.summary.histogram(name="weights1", values=w1)
             # cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_layer_size)
-            cell = tf.nn.rnn_cell.LSTMCell(hidden_layer_size)
+            cell = tf.nn.rnn_cell.BasicRNNCell(hidden_layer_size)
             outputs, states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
             # TODO: w2?
             w2 = tf.tile(input=tf.expand_dims(w1, 0), multiples=[tf.shape(X)[0], 1, 1])
-            w2 = tf.nn.dropout(w2, 0.05)
             tf.summary.histogram(name="weights2", values=w2)
         with tf.name_scope('biases'):
             b = tf.Variable(tf.random_normal([1]), name='b')
             tf.summary.histogram(name="b", values=b)
         with tf.name_scope('predict'):
-            # LSTM-II 含偏置项,tanh
-            y_ = tf.nn.tanh(tf.matmul(outputs, w2) + b)
-
+            y_ = tf.nn.tanh(tf.matmul(outputs, w2))
             y_ = tf.squeeze(y_)
-
             tf.summary.histogram(name="y_predict", values=y_)
     return y_, w1, w2
 
 
 # 数据标准化处理
 with tf.name_scope('LSTM_Data'):
-    data_full = readxlsbycol(Datadir, Data_Sheet, 0)
+    data_full = readxlsbycol(Datadir, Data_Sheet, 1)
 
-    data = data_full[:-3]
+    data = data_full[:-50]
 
     data_nomarlized = mnormalize(data)
     data_full_normalized = mnormalize(data_full)
 
-    x_train, y_train, x_train_non = [], [], []
+    x_train, y_train, x_train_non, x_full = [], [], [], []
     for i in range(len(data_nomarlized) - seq_size - 1):
         x_train_non.append(np.expand_dims(data[i: i + seq_size], axis=1).tolist())
         x_train.append(np.expand_dims(data_nomarlized[i: i + seq_size], axis=1).tolist())
         y_train.append(data_nomarlized[i + 1: i + seq_size + 1].tolist())
+        x_full.append(np.expand_dims(data_full_normalized[i + 1: i + seq_size + 1], axis=1).tolist())
     tf.summary.histogram(name="x_train", values=x_train)
     tf.summary.histogram(name="y_train", values=y_train)
 
@@ -118,39 +112,29 @@ def train_rnn():
         sess.run(tf.global_variables_initializer())
         train_writer = tf.summary.FileWriter(TensorBoarddir, sess.graph)
 
-        cost_prev = 0
         for step in range(train_step):
             summary, _, loss_ = sess.run([merged, train_op, loss], feed_dict={X: x_train, Y: y_train})
-            if step % 10 == 0 and cost_prev != -1:
-                delta = 1 if cost_prev == 0 else (abs(loss_ - cost_prev) / cost_prev)
-                cost_prev = loss_
-                if delta < early_stopping_rate:
-                    print("训练步数: ", step, " MSE = ", loss_)
-                    print("训练步数: ", step, " RMSE = ", pow(loss_, 0.5))
-                    saver = tf.train.Saver()
-                    saver.save(sess, Modeldir)
-                    print("模型已保存")
-
-                    cost_prev = -1
-                    break
             if step % 100 == 0:
                 train_writer.add_summary(summary, step)
                 print(step, loss_)
-        if cost_prev != -1:
-            print("模型已另存至 ", saver.save(sess, Modeldir))
-            print("可视化数据已另存至 ", TensorBoarddir)
-
+            if step % 500 == 0 and step >=1000:
+                print("模型已另存至 ", saver.save(sess, Modeldir))
+                print("可视化数据已另存至 ", TensorBoarddir)
+        print("模型已另存至 ", saver.save(sess, Modeldir))
+        print("可视化数据已另存至 ", TensorBoarddir)
 
 
 # 预测
-def prediction(data):
+def prediction():
     y_, _, _ = rnn()
+
+    preseq=30
 
     saver = tf.train.Saver(tf.global_variables())
 
     with tf.name_scope('LSTM_Accuracy'):
+
         with tf.Session() as sess:
-            train_writer = tf.summary.FileWriter(TensorBoarddir, sess.graph)
             saver.restore(sess, Modeldir)
 
             prev_seq = data[-1]
@@ -164,7 +148,7 @@ def prediction(data):
             print("真实值", real)
             print("预测值", predict)
 
-            MSE = getsumse(predict, real) / 3
+            MSE = getsumse(predict, real) / preseq
             tf.summary.histogram(name="MSE", values=MSE)
 
             RMSE = pow(MSE, 0.5)
@@ -179,17 +163,19 @@ def prediction(data):
 
 
 # 预测(反归一化)
-def prediction_non(data_n):
+def prediction_non():
     y_, _, _ = rnn()
+
+    preseq = 50
 
     saver = tf.train.Saver(tf.global_variables())
 
     with tf.Session() as sess:
         saver.restore(sess, Modeldir)
 
-        prev_seq = data_n[-1]
+        prev_seq = x_full[-preseq]
         predict = []
-        for i in range(3):
+        for i in range(preseq):
             next_seq = sess.run(y_, feed_dict={X: [prev_seq]})
             predict.append(next_seq[-1])
             prev_seq = np.vstack((prev_seq[1:], next_seq[-1]))
@@ -199,9 +185,9 @@ def prediction_non(data_n):
         for num in predict:
             predict_unnormalized.append(num * np.max(data_full))
         print(predict_unnormalized)
-        real = data_full[-3:]
+        real = data_full[-preseq:]
         print(real)
-        MSE = getsumse(predict_unnormalized, real) / 3
+        MSE = getsumse(predict_unnormalized, real) / preseq
         RMSE = pow(MSE, 0.5)
         # 拟合优度
         print("MSE = ", MSE, "RMSE = ", RMSE)
@@ -218,6 +204,6 @@ def prediction_non(data_n):
 
 
 if __name__ == '__main__':
-    # train_rnn()
-    prediction(x_train)
-    # prediction_non(x_train)
+    train_rnn()
+    # prediction(x_train)
+    # prediction_non()
