@@ -16,30 +16,28 @@ from Utility.XlsReader import readxlsbycol
 
 Rootdir = os.path.abspath(os.path.dirname(os.path.dirname(os.getcwd())))
 # Modeldir = Rootdir + r"\Models\LSTM\LSTM-I"
-Modeldir = r"E:\PyCharmProjects\MasonicDeepLearning\Models\LSTM_MarkI\LSTM-MarkI.model"
+Modeldir = r"E:\PyCharmProjects\MasonicDeepLearning\Models\LSTM_MarkI\LSTM-MarkI_II.model"
 Datadir = Rootdir + "\DataSet\LSTM_MarkI\白鹿原.xlsx"
-TensorBoarddir = Rootdir + r"\TensorBoard\LSTM\LSTM_MarkI"
+TensorBoarddir = Rootdir + r"\TensorBoard\LSTM\LSTM_MarkI_II"
 Data_Sheet = "白鹿原"
+# 以白鹿原播放量为数据库构建的2层LSTM模型
+
 
 # 训练参数设定
 with tf.name_scope('LSTM_Hyper_Parameter'):
     # learning_rate = 0.0001
     # 设定衰减学习率以加速学习
     train_step = 10000
-    tf.summary.scalar('train_step', train_step)
     global_step = tf.Variable(0, name="global_step")
     learning_rate = \
         tf.train.exponential_decay(learning_rate=0.01, global_step=global_step, decay_steps=100, decay_rate=0.9,
                                    staircase=True)
-    tf.summary.scalar('learning_rate', learning_rate)
     regularizer_enabled = True
     w_regularizer_rate = 0.5
-    tf.summary.scalar('w1_regularizer_rate', w_regularizer_rate)
     hidden_layer_size = 30
-    tf.summary.scalar('hidden_layer_size', hidden_layer_size)
     # 序列参考量
     seq_size = 10
-    tf.summary.scalar('seq_size', seq_size)
+    keep_prob = 0.9
 
 
 # 循环神经网络
@@ -47,20 +45,23 @@ def rnn():
     with tf.name_scope('LSTM_Neural_Network_Layer'):
         with tf.name_scope('weights'):
             w1 = tf.Variable(tf.random_normal([hidden_layer_size, 1]), name='W')
-            tf.summary.histogram(name="weights1", values=w1)
-            # cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_layer_size)
-            cell = tf.nn.rnn_cell.BasicRNNCell(hidden_layer_size)
-            outputs, states = tf.nn.dynamic_rnn(cell, X, dtype=tf.float32)
+            mcell = []
+            for layer in range(2):
+                cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=hidden_layer_size)
+                # 单层LSTM
+                cell = tf.nn.rnn_cell.DropoutWrapper(cell=cell, input_keep_prob=1.0, output_keep_prob=keep_prob)
+                # drop-out层
+                mcell.append(cell)
+            mcell = tf.nn.rnn_cell.MultiRNNCell(cells=mcell, state_is_tuple=True)
+            #
+            outputs, states = tf.nn.dynamic_rnn(mcell, inputs=X, dtype=tf.float32, time_major=True)
+            # h_state = states[-1][1]
             # TODO: w2?
             w2 = tf.tile(input=tf.expand_dims(w1, 0), multiples=[tf.shape(X)[0], 1, 1])
-            tf.summary.histogram(name="weights2", values=w2)
-        with tf.name_scope('biases'):
-            b = tf.Variable(tf.random_normal([1]), name='b')
-            tf.summary.histogram(name="b", values=b)
-        with tf.name_scope('predict'):
+            # 此处添加偏置项不当可能导致图像整体平移
+            # b = tf.Variable(tf.random_normal([1]), name='b')
             y_ = tf.nn.tanh(tf.matmul(outputs, w2))
             y_ = tf.squeeze(y_)
-            tf.summary.histogram(name="y_predict", values=y_)
     return y_, w1, w2
 
 
@@ -117,7 +118,7 @@ def train_rnn():
             if step % 100 == 0:
                 train_writer.add_summary(summary, step)
                 print(step, loss_)
-            if step % 500 == 0 and step >=1000:
+            if step % 500 == 0 and step >= 500:
                 print("模型已另存至 ", saver.save(sess, Modeldir))
                 print("可视化数据已另存至 ", TensorBoarddir)
         print("模型已另存至 ", saver.save(sess, Modeldir))
@@ -128,16 +129,15 @@ def train_rnn():
 def prediction():
     y_, _, _ = rnn()
 
-    preseq=30
+    preseq = 30
 
     saver = tf.train.Saver(tf.global_variables())
 
     with tf.name_scope('LSTM_Accuracy'):
-
         with tf.Session() as sess:
             saver.restore(sess, Modeldir)
 
-            prev_seq = data[-1]
+            prev_seq = x_full[-1]
             predict = []
             for i in range(3):
                 next_seq = sess.run(y_, feed_dict={X: [prev_seq]})
@@ -161,49 +161,7 @@ def prediction():
             plt.plot(list(range(len(data_full_normalized))), data_full_normalized, color='r')
             plt.show()
 
-
-# 预测(反归一化)
-def prediction_non():
-    y_, _, _ = rnn()
-
-    preseq = 50
-
-    saver = tf.train.Saver(tf.global_variables())
-
-    with tf.Session() as sess:
-        saver.restore(sess, Modeldir)
-
-        prev_seq = x_full[-preseq]
-        predict = []
-        for i in range(preseq):
-            next_seq = sess.run(y_, feed_dict={X: [prev_seq]})
-            predict.append(next_seq[-1])
-            prev_seq = np.vstack((prev_seq[1:], next_seq[-1]))
-
-        print(predict)
-        predict_unnormalized = []
-        for num in predict:
-            predict_unnormalized.append(num * np.max(data_full))
-        print(predict_unnormalized)
-        real = data_full[-preseq:]
-        print(real)
-        MSE = getsumse(predict_unnormalized, real) / preseq
-        RMSE = pow(MSE, 0.5)
-        # 拟合优度
-        print("MSE = ", MSE, "RMSE = ", RMSE)
-        # MSE = getsumse(predict, real) / 3
-        # RMSE = pow(MSE, 0.5)
-        # 拟合优度
-        # print("MSE = ", MSE, "RMSE = ", RMSE)
-        plt.figure()
-
-        plt.plot(list(range(len(data), len(data) + len(predict_unnormalized))), predict_unnormalized,
-                 color='b')
-        plt.plot(list(range(len(data_full))), data_full, color='r')
-        plt.show()
-
-
 if __name__ == '__main__':
-    train_rnn()
-    # prediction(x_train)
+    # train_rnn()
+    prediction()
     # prediction_non()
